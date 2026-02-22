@@ -148,7 +148,7 @@ jobs:
       - name: Pack source tarball
         run: |
           mkdir -p release-assets/source
-          tar --exclude-vcs --exclude='./target' --exclude='./crates/loki-dm-gui/web/node_modules' \
+          tar --exclude-vcs --exclude='./target' --exclude='./release-assets' --exclude='./crates/loki-dm-gui/web/node_modules' \
             -czf release-assets/source/loki-dm-source.tar.gz .
 
       - name: Compute tag
