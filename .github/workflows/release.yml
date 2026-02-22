@@ -2,7 +2,6 @@ name: release
 
 on:
   push:
-    branches: ["main"]
     tags:
       - "v*"
   workflow_dispatch:
@@ -110,7 +109,7 @@ jobs:
       - name: Build GUI bundles
         run: |
           cd crates/loki-dm-gui
-          cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+          tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
 
       - name: Build macOS DMG (manual hdiutil)
         if: matrix.os == 'macos-latest'
