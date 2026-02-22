@@ -95,7 +95,7 @@ jobs:
         run: npm --prefix crates/loki-dm-gui/web ci
 
       - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2.0" --locked
+        run: npm install -g @tauri-apps/cli@2
 
       - name: Install WiX Toolset
         if: matrix.os == 'windows-latest'
