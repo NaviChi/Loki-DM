@@ -24,6 +24,15 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: crates/loki-dm-gui/web/package-lock.json
+      - name: Install frontend deps
+        run: npm --prefix crates/loki-dm-gui/web ci
+      - name: Build frontend
+        run: npm --prefix crates/loki-dm-gui/web run build
       - uses: Swatinem/rust-cache@v2
       - name: Format
         run: cargo fmt --all --check
