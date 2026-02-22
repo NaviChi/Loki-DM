@@ -36,8 +36,10 @@ jobs:
       - name: Build frontend
         run: npm --prefix crates/loki-dm-gui/web run build
       - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
       - name: Audit dependencies (RustSec)
-        uses: actions-rs/audit-check@v1
+        run: cargo audit
       - name: Format
         run: cargo fmt --all -- --check
       - name: Clippy (deny warnings)
