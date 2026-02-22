@@ -28,7 +28,14 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "appimage", "deb", "rpm", "dmg", "msi"],
+    "targets": ["app", "deb", "rpm", "dmg", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
     "category": "Utility",
     "shortDescription": "Loki DM - Loki Download Manager",
     "longDescription": "High-performance segmented download manager written in Rust.",

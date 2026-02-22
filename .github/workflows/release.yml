@@ -59,11 +59,11 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            bundles: appimage,deb,rpm
+            bundles: deb
             cli_bin: loki-dm
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            bundles: msi
+            bundles: nsis
             cli_bin: loki-dm.exe
           - os: macos-latest
             target: aarch64-apple-darwin
@@ -98,13 +98,6 @@ jobs:
 
       - name: Install frontend deps
         run: npm --prefix crates/loki-dm-gui/web ci
-
-      - name: Install WiX Toolset
-        if: matrix.os == 'windows-latest'
-        shell: powershell
-        run: |
-          choco install wixtoolset --no-progress -y
-          Add-Content $env:GITHUB_PATH "C:\Program Files (x86)\WiX Toolset v3.11\bin"
 
       - name: Build CLI
         run: cargo build --release --target ${{ matrix.target }} -p loki-dm-cli
