@@ -165,9 +165,9 @@ jobs:
           cp "$WINDOWS_DIR/loki-dm.exe" release-assets/publish/loki-dm-windows-x86_64.exe
           cp "$MAC_DIR/loki-dm" release-assets/publish/loki-dm-macos-aarch64
 
-          LINUX_DEB="$(find "$LINUX_DIR" -maxdepth 1 -type f -name '*.deb' | head -n1)"
-          WINDOWS_SETUP="$(find "$WINDOWS_DIR" -maxdepth 1 -type f -name '*setup*.exe' | head -n1)"
-          MAC_DMG="$(find "$MAC_DIR" -maxdepth 1 -type f -name '*.dmg' | head -n1)"
+          LINUX_DEB="$(find "$LINUX_DIR" -type f -name '*.deb' | head -n1)"
+          WINDOWS_SETUP="$(find "$WINDOWS_DIR" -type f -name '*setup*.exe' | head -n1)"
+          MAC_DMG="$(find "$MAC_DIR" -type f -name '*.dmg' | head -n1)"
 
           cp "$LINUX_DEB" release-assets/publish/loki-dm-linux-amd64.deb
           cp "$WINDOWS_SETUP" release-assets/publish/loki-dm-windows-setup-x64.exe
