@@ -13,6 +13,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy,rustfmt
+      - name: Install Linux GUI dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libsoup-3.0-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
       - uses: Swatinem/rust-cache@v2
       - name: Format
         run: cargo fmt --all --check
