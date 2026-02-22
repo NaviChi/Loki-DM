@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Loki DM",
+  "version": "0.1.0",
+  "identifier": "com.loki.dm",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --host 127.0.0.1 --port 1420",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "frontend"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Loki DM - Loki Download Manager",
+        "width": 1320,
+        "height": 860,
+        "minWidth": 1000,
+        "minHeight": 640,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "appimage", "deb", "rpm", "dmg", "msi"],
+    "category": "Utility",
+    "shortDescription": "Loki DM - Loki Download Manager",
+    "longDescription": "High-performance segmented download manager written in Rust.",
+    "copyright": "Copyright (c) 2026 Loki DM contributors"
+  }
+}

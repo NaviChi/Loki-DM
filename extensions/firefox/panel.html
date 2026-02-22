@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loki DM</title>
+    <style>
+      body {
+        margin: 0;
+        width: 320px;
+        font-family: system-ui, sans-serif;
+        color: #edf2ff;
+        background: radial-gradient(circle at 10% 0%, #284c85 0, #0f1f38 65%, #0a1428 100%);
+      }
+      .wrap {
+        padding: 14px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+      p {
+        margin: 0 0 10px;
+        opacity: 0.85;
+        font-size: 12px;
+      }
+      label {
+        font-size: 12px;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 6px;
+        margin-bottom: 10px;
+        padding: 8px;
+        border: 1px solid #2a4578;
+        border-radius: 8px;
+        color: #edf2ff;
+        background: rgba(8, 20, 40, 0.7);
+      }
+      button {
+        width: 100%;
+        padding: 9px;
+        border: 0;
+        border-radius: 8px;
+        font-weight: 700;
+        color: #0a1120;
+        background: linear-gradient(135deg, #89c7ff, #75f3da);
+        cursor: pointer;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Loki DM – Quick Send</h1>
+      <p>Paste URL or use context menu on links/videos.</p>
+      <label for="url">Download URL</label>
+      <input id="url" placeholder="https://example.com/file.iso" />
+      <button id="send">Download with Loki DM</button>
+      <div class="row">
+        <input id="interceptAll" type="checkbox" />
+        <label for="interceptAll">Intercept browser downloads</label>
+      </div>
+    </div>
+    <script src="panel.js"></script>
+  </body>
+</html>

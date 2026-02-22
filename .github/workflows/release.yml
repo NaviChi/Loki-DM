@@ -1,0 +1,177 @@
+name: release
+
+on:
+  push:
+    branches: ["main"]
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt,clippy
+      - name: Install Linux GUI dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: crates/loki-dm-gui/web/package-lock.json
+      - name: Install frontend deps
+        run: npm --prefix crates/loki-dm-gui/web ci
+      - name: Build frontend
+        run: npm --prefix crates/loki-dm-gui/web run build
+      - uses: Swatinem/rust-cache@v2
+      - name: Audit dependencies (RustSec)
+        uses: actions-rs/audit-check@v1
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy (deny warnings)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Tests
+        run: cargo test --workspace
+      - name: Bench compile
+        run: cargo bench --workspace --no-run
+
+  bundle:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage,deb,rpm
+            cli_bin: loki-dm
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: msi
+            cli_bin: loki-dm.exe
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bundles: app
+            cli_bin: loki-dm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: crates/loki-dm-gui/web/package-lock.json
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install Linux bundle dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            rpm
+
+      - name: Install frontend deps
+        run: npm --prefix crates/loki-dm-gui/web ci
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2.0" --locked
+
+      - name: Install WiX Toolset
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: |
+          choco install wixtoolset --no-progress -y
+          Add-Content $env:GITHUB_PATH "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+
+      - name: Build CLI
+        run: cargo build --release --target ${{ matrix.target }} -p loki-dm-cli
+
+      - name: Build GUI bundles
+        run: |
+          cd crates/loki-dm-gui
+          cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+
+      - name: Build macOS DMG (manual hdiutil)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="target/${{ matrix.target }}/release/bundle/macos/Loki DM.app"
+          OUT_DIR="target/${{ matrix.target }}/release/bundle/dmg"
+          OUT="$OUT_DIR/Loki-DM-${{ matrix.target }}.dmg"
+          mkdir -p "$OUT_DIR"
+          TMP_DIR="$(mktemp -d)"
+          cp -R "$APP" "$TMP_DIR/"
+          ln -s /Applications "$TMP_DIR/Applications"
+          hdiutil create -volname "Loki DM" -srcfolder "$TMP_DIR" -ov -format UDZO "$OUT"
+          rm -rf "$TMP_DIR"
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p dist/${{ matrix.target }}
+          cp target/${{ matrix.target }}/release/${{ matrix.cli_bin }} dist/${{ matrix.target }}/ || true
+          cp -R target/${{ matrix.target }}/release/bundle/* dist/${{ matrix.target }}/ || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: loki-dm-${{ matrix.target }}
+          path: dist/${{ matrix.target }}
+
+  release:
+    needs: bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Pack source tarball
+        run: |
+          mkdir -p release-assets/source
+          tar --exclude-vcs --exclude='./target' --exclude='./crates/loki-dm-gui/web/node_modules' \
+            -czf release-assets/source/loki-dm-source.tar.gz .
+
+      - name: Compute tag
+        id: tag
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=v1.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.value }}
+          name: Loki DM ${{ steps.tag.outputs.value }}
+          prerelease: ${{ steps.tag.outputs.prerelease }}
+          generate_release_notes: true
+          files: |
+            release-assets/**

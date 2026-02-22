@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="Loki DM" Language="1033" Version="1.0.0" Manufacturer="Loki DM" UpgradeCode="6DF2B85A-D479-47C5-9E46-3E388A4E8A10">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Loki DM is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="ProductFeature" Title="Loki DM" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+    <UIRef Id="WixUI_InstallDir" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLDIR" Name="Loki DM" />
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Loki DM" />
+      </Directory>
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+
+    <DirectoryRef Id="INSTALLDIR">
+      <Component Id="MainExecutable" Guid="2F26C0EA-1F3F-4E76-88A2-80CD15D7025A">
+        <File Id="LokiDmExe" Source="..\\..\\target\\release\\loki-dm.exe" KeyPath="yes" />
+      </Component>
+      <Component Id="GuiExecutable" Guid="9AEFC6BC-9625-4AF8-A11D-AF1FA7E2A3E0">
+        <File Id="LokiDmGuiExe" Source="..\\..\\target\\release\\loki-dm-gui.exe" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="StartMenuShortcut" Guid="E0703EAF-26B8-45B6-A9E5-F4D6BF068A5B">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="Loki DM"
+                  Description="Loki Download Manager"
+                  Target="[INSTALLDIR]loki-dm-gui.exe"
+                  WorkingDirectory="INSTALLDIR" />
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\\LokiDM" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="1A7A4EBE-15FB-47B8-87DA-A5A0C0B1331E">
+        <Shortcut Id="ApplicationDesktopShortcut"
+                  Name="Loki DM"
+                  Description="Loki Download Manager"
+                  Target="[INSTALLDIR]loki-dm-gui.exe"
+                  WorkingDirectory="INSTALLDIR" />
+        <RegistryValue Root="HKCU" Key="Software\\LokiDM" Name="desktop_shortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <ComponentGroup Id="ProductComponents">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="GuiExecutable" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </ComponentGroup>
+  </Product>
+</Wix>

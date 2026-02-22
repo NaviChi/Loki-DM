@@ -1,0 +1,55 @@
+[workspace]
+members = [
+  "crates/loki-dm-core",
+  "crates/loki-dm-cli",
+  "crates/loki-dm-gui",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+authors = ["Navi"]
+repository = "https://github.com/navi/loki-dm"
+rust-version = "1.93"
+
+[workspace.dependencies]
+anyhow = "1.0"
+arboard = "3.6"
+clap = { version = "4.5", features = ["derive", "env"] }
+dirs = "6.0"
+futures-util = "0.3"
+m3u8-rs = "6.0"
+rand = "0.9"
+reqwest = { version = "0.12", default-features = false, features = ["http2", "rustls-tls-native-roots", "stream", "socks", "gzip", "brotli", "deflate", "json"] }
+semver = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+tokio = { version = "1.48", features = ["rt-multi-thread", "macros", "sync", "fs", "time", "signal", "process", "io-util"] }
+toml = "0.9"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+url = "2.5"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 1
+# Reduces debug-link churn and avoids large-symbol linker issues on newer macOS toolchains.
+debug = 0
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unused_must_use = "deny"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"

@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Loki DM Integration",
+  "version": "0.1.0",
+  "description": "Send downloads to Loki DM",
+  "permissions": [
+    "contextMenus",
+    "downloads",
+    "activeTab",
+    "scripting",
+    "storage",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Loki DM",
+    "default_popup": "panel.html"
+  }
+}

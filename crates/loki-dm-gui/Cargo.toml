@@ -1,0 +1,29 @@
+[package]
+name = "loki-dm-gui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+build = "build.rs"
+
+[[bin]]
+name = "loki-dm-gui"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow.workspace = true
+loki-dm-core = { path = "../loki-dm-core" }
+serde.workspace = true
+serde_json.workspace = true
+tauri = { version = "2.1", features = ["custom-protocol"] }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+url.workspace = true
+reqwest.workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2.1", features = [] }

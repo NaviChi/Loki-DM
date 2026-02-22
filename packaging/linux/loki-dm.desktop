@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Loki DM
+Comment=High-performance Rust download manager
+Exec=loki-dm-gui %u
+Icon=loki-dm
+Terminal=false
+Categories=Network;Utility;
+StartupWMClass=Loki DM - Loki Download Manager
+MimeType=x-scheme-handler/http;x-scheme-handler/https;
+Keywords=download;manager;idm;

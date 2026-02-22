@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Loki DM Integration",
+  "version": "0.1.0",
+  "description": "Send downloads to Loki DM",
+  "permissions": [
+    "contextMenus",
+    "downloads",
+    "activeTab",
+    "nativeMessaging",
+    "storage"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Loki DM",
+    "default_popup": "panel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "loki-dm@example.org",
+      "strict_min_version": "126.0"
+    }
+  }
+}

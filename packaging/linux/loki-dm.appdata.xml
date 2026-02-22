@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.loki.dm</id>
+  <name>Loki DM</name>
+  <summary>Loki Download Manager</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>Loki DM is a high-performance segmented download manager written in Rust.</p>
+    <p>Features include adaptive multi-connection downloading, resume metadata, queue automation, scheduler, browser native-host integration, and a native desktop UI.</p>
+  </description>
+  <launchable type="desktop-id">loki-dm.desktop</launchable>
+  <categories>
+    <category>Network</category>
+    <category>Utility</category>
+  </categories>
+  <url type="homepage">https://github.com/USERNAME/Loki-DM</url>
+  <url type="bugtracker">https://github.com/USERNAME/Loki-DM/issues</url>
+</component>
