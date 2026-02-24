@@ -107,6 +107,7 @@
 
   .activity-card {
     @apply rounded-2xl border border-white/10 bg-black/20 p-3 transition;
+    min-height: 218px;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }

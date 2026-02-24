@@ -36,11 +36,13 @@ use loki_dm_core::{
     NativeHostValidationReport, ScheduleSpec, ScheduledDownload, collect_native_host_diagnostics,
 };
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{Manager, State};
 use tokio::sync::Mutex;
 use tokio::sync::mpsc::error::TryRecvError;
 use tracing::warn;
 use url::Url;
+
+const SPEED_HISTORY_LIMIT: usize = 48;
 
 #[derive(Clone)]
 struct AppState {
@@ -89,6 +91,7 @@ struct DownloadRow {
     target_connections: u16,
     message: String,
     added_order: u64,
+    speed_history: Vec<f64>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -204,6 +207,7 @@ struct DownloadDto {
     target_connections: u16,
     message: String,
     added_order: u64,
+    speed_history: Vec<f64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -470,6 +474,11 @@ impl CoreState {
                     row.downloaded_bytes = progress.downloaded_bytes;
                     row.total_bytes = progress.total_bytes;
                     row.speed_bps = progress.speed_bps;
+                    row.speed_history.push(progress.speed_bps.max(0.0));
+                    if row.speed_history.len() > SPEED_HISTORY_LIMIT {
+                        let overflow = row.speed_history.len() - SPEED_HISTORY_LIMIT;
+                        row.speed_history.drain(0..overflow);
+                    }
                     row.eta_seconds = progress.eta_seconds;
                     row.active_connections = progress.active_connections;
                     row.target_connections = progress.target_connections;
@@ -732,6 +741,7 @@ impl CoreState {
             target_connections,
             message: "queued".to_owned(),
             added_order,
+            speed_history: Vec::new(),
         });
         self.handles.insert(id, handle);
 
@@ -1111,6 +1121,7 @@ impl CoreState {
                 target_connections: row.target_connections,
                 message: row.message,
                 added_order: row.added_order,
+                speed_history: row.speed_history,
             })
             .collect::<Vec<_>>();
 
@@ -1777,6 +1788,37 @@ fn format_validation_report(report: &NativeHostValidationReport) -> Vec<String> 
     lines
 }
 
+fn configure_window_vibrancy(window: &tauri::WebviewWindow) {
+    #[cfg(target_os = "windows")]
+    {
+        if let Err(err) = window_vibrancy::apply_mica(window, Some(true)) {
+            warn!("failed to apply windows mica effect: {err}");
+            if let Err(fallback_err) = window_vibrancy::apply_blur(window, Some((15, 19, 31, 170)))
+            {
+                warn!("failed to apply windows blur fallback: {fallback_err}");
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        if let Err(err) = window_vibrancy::apply_vibrancy(
+            window,
+            window_vibrancy::NSVisualEffectMaterial::HudWindow,
+            Some(window_vibrancy::NSVisualEffectState::Active),
+            Some(20.0),
+        ) {
+            warn!("failed to apply macOS vibrancy: {err}");
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        // Linux compositors control blur/translucency externally; retain transparent window only.
+        let _ = window;
+    }
+}
+
 fn main() -> anyhow::Result<()> {
     let _ = tracing_subscriber::fmt()
         .with_env_filter("loki_dm_gui=info,loki_dm_core=info")
@@ -1785,6 +1827,12 @@ fn main() -> anyhow::Result<()> {
     let core = CoreState::new()?;
 
     tauri::Builder::default()
+        .setup(|app| {
+            if let Some(window) = app.get_webview_window("main") {
+                configure_window_vibrancy(&window);
+            }
+            Ok(())
+        })
         .manage(AppState::new(core))
         .invoke_handler(tauri::generate_handler![
             dashboard_state,

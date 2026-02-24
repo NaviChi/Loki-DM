@@ -191,16 +191,6 @@ function iconEmoji(fileName = "") {
   return "⬇";
 }
 
-function updateSpeedSeries(previous, downloads) {
-  const next = {};
-  for (const row of downloads || []) {
-    const prior = Array.isArray(previous[row.id]) ? previous[row.id] : [];
-    const value = Math.max(0, Number(row.speedBps || 0));
-    next[row.id] = [...prior.slice(-23), value];
-  }
-  return next;
-}
-
 function sparklinePoints(values, width = 120, height = 30) {
   if (!Array.isArray(values) || values.length === 0) {
     return "";
@@ -224,13 +214,17 @@ function panelTabClasses(active) {
   return `input-box h-8 px-2 text-xs ${active ? "border-blue-500 text-blue-300" : ""}`;
 }
 
+const VIRTUAL_CARD_HEIGHT = 238;
+const VIRTUAL_OVERSCAN = 4;
+
 export default function App() {
   const [dashboard, setDashboard] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All Downloads");
   const [selectedDownloadId, setSelectedDownloadId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [speedSeries, setSpeedSeries] = useState({});
+  const [activityScrollTop, setActivityScrollTop] = useState(0);
+  const [activityViewportHeight, setActivityViewportHeight] = useState(640);
   const [form, setForm] = useState(INITIAL_FORM);
   const [busy, setBusy] = useState(false);
   const [localStatus, setLocalStatus] = useState("Ready");
@@ -251,11 +245,11 @@ export default function App() {
   const [browserInitialized, setBrowserInitialized] = useState(false);
 
   const urlInputRef = useRef(null);
+  const activityScrollRef = useRef(null);
 
   const refresh = useCallback(async () => {
     const snapshot = await invoke("dashboard_state");
     setDashboard(snapshot);
-    setSpeedSeries((previous) => updateSpeedSeries(previous, snapshot?.downloads || []));
     setLocalStatus(snapshot.statusMessage || "Ready");
     setSelectedDownloadId((current) => {
       if (current && snapshot.downloads.some((row) => row.id === current)) {
@@ -301,6 +295,34 @@ export default function App() {
     };
     window.addEventListener("keydown", onEsc);
     return () => window.removeEventListener("keydown", onEsc);
+  }, []);
+
+  useEffect(() => {
+    setActivityScrollTop(0);
+    if (activityScrollRef.current) {
+      activityScrollRef.current.scrollTop = 0;
+    }
+  }, [searchQuery, selectedCategory]);
+
+  useEffect(() => {
+    const node = activityScrollRef.current;
+    if (!node) {
+      return undefined;
+    }
+
+    const updateHeight = () => {
+      setActivityViewportHeight(node.clientHeight || 640);
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(node);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -380,6 +402,36 @@ export default function App() {
     return { all, unfinished, finished };
   }, [filteredDownloads]);
 
+  const virtualizedRows = useMemo(() => {
+    const total = filteredDownloads.length;
+    if (total === 0) {
+      return {
+        visible: [],
+        topPadding: 0,
+        bottomPadding: 0,
+      };
+    }
+
+    const viewport = Math.max(200, activityViewportHeight);
+    const start = Math.max(
+      0,
+      Math.floor(activityScrollTop / VIRTUAL_CARD_HEIGHT) - VIRTUAL_OVERSCAN,
+    );
+    const visibleCount =
+      Math.ceil(viewport / VIRTUAL_CARD_HEIGHT) + VIRTUAL_OVERSCAN * 2;
+    const end = Math.min(total, start + visibleCount);
+
+    return {
+      visible: filteredDownloads.slice(start, end),
+      topPadding: start * VIRTUAL_CARD_HEIGHT,
+      bottomPadding: Math.max(0, (total - end) * VIRTUAL_CARD_HEIGHT),
+    };
+  }, [activityScrollTop, activityViewportHeight, filteredDownloads]);
+
+  const handleActivityScroll = useCallback((event) => {
+    setActivityScrollTop(event.currentTarget.scrollTop);
+  }, []);
+
   const runCommand = useCallback(
     async (command, args = {}) => {
       setBusy(true);
@@ -387,7 +439,6 @@ export default function App() {
         const snapshot = await invoke(command, args);
         if (snapshot && typeof snapshot === "object" && Array.isArray(snapshot.downloads)) {
           setDashboard(snapshot);
-          setSpeedSeries((previous) => updateSpeedSeries(previous, snapshot.downloads || []));
           setLocalStatus(snapshot.statusMessage || "Ready");
         } else {
           await refresh();
@@ -714,17 +765,25 @@ export default function App() {
                 </span>
               </div>
 
-              <div className="activity-feed min-h-0 overflow-auto p-3">
+              <div
+                ref={activityScrollRef}
+                className="activity-feed min-h-0 overflow-auto p-3"
+                onScroll={handleActivityScroll}
+              >
                 {filteredDownloads.length === 0 && (
                   <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-slate-400">
                     No downloads in this filter.
                   </div>
                 )}
 
-                {filteredDownloads.map((row) => {
+                {virtualizedRows.topPadding > 0 && (
+                  <div style={{ height: `${virtualizedRows.topPadding}px` }} />
+                )}
+
+                {virtualizedRows.visible.map((row) => {
                   const pct = Math.max(0, Math.min(100, Math.round((row.progress || 0) * 100)));
                   const active = row.id === selectedDownloadId;
-                  const sparkline = sparklinePoints(speedSeries[row.id] || []);
+                  const sparkline = sparklinePoints(row.speedHistory || []);
                   return (
                     <article
                       key={row.id}
@@ -804,6 +863,10 @@ export default function App() {
                     </article>
                   );
                 })}
+
+                {virtualizedRows.bottomPadding > 0 && (
+                  <div style={{ height: `${virtualizedRows.bottomPadding}px` }} />
+                )}
               </div>
             </section>
 
